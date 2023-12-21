@@ -22,7 +22,7 @@ amplitude:
 s3:
     accessKeyId:
     secretAccessKey:
-    region:
+    region: "ap-south-1"
     bucket:
     useIAMAuth:
     # Default value is 2 days
@@ -52,8 +52,8 @@ github:
     callback_url: GITHUB_CALLBACK_URL
 
 dynamo:
-  tableName:
-  endpoint:
+  tableName: "rtc-visualizer"
+  endpoint: "streams.dynamodb.ap-south-1.amazonaws.com"
 
 webhooks:
     apiEndpoint:
@@ -64,5 +64,5 @@ webhooks:
     jwtTTLSec: 7200
 
 secretmanager:
-    region:
+    region: 
     jwtSecretId:

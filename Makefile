@@ -1,4 +1,4 @@
-REGISTRY:=jitsi-dev
+REGISTRY:=718762496685.dkr.ecr.ap-south-1.amazonaws.com/sariska
 IMAGE:=rtcstats-server
 REPOSITORY:=$(REGISTRY)/$(IMAGE)
 TAG:=latest
