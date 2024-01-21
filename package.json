@@ -26,6 +26,8 @@
   },
   "homepage": "https://github.com/jitsi/rtcstats-server#readme",
   "dependencies": {
+    "@aws-sdk/client-firehose": "^3.490.0",
+    "@aws-sdk/client-redshift-serverless": "^3.496.0",
     "amplitude": "^4.0.1",
     "aws-sdk": "^2.441.0",
     "axios": "^1.2.0",
