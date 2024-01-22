@@ -20,8 +20,8 @@ amplitude:
     key:
 
 s3:
-    accessKeyId: "AKIA2OWMVKKWVLSWVVKG"
-    secretAccessKey: "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"
+    accessKeyId: ""
+    secretAccessKey: ""
     region: "ap-south-1"
     bucket: "jitsi-micros-rtcstats-server-sariska"
     useIAMAuth: true
@@ -29,8 +29,8 @@ s3:
     signedLinkExpirationSec: 172800
 
 firehose:
-    accessKeyId: "AKIA2OWMVKKWVLSWVVKG"
-    secretAccessKey: "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"
+    accessKeyId: ""
+    secretAccessKey: ""
     region: "ap-south-1"
     meetingStatsStream: "meetingStatsStream"
     pcStatsStream: "pcStatsStream"
