@@ -315,6 +315,8 @@ function wsConnectionHandler(client, upgradeReq) {
                 applicationName: app = 'Undefined',
                 confID: conferenceUrl,
                 confName: conferenceId,
+                appId, 
+                ownerId,
                 customerId,
                 dumpPath,
                 endpointId,
@@ -340,6 +342,8 @@ function wsConnectionHandler(client, upgradeReq) {
             // Metadata associated with a dump can get large so just select the necessary fields.
             const dumpData = {
                 app,
+                appId,
+                ownerId,
                 clientId: id,
                 clientType,
                 conferenceId,

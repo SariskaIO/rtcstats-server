@@ -37,6 +37,8 @@ class FeaturesPublisher {
             clientId: statsSessionId,
             sessionId: meetingUniqueId,
             conferenceUrl: meetingUrl,
+            appId,
+            onwerId,
             tenant,
             jaasClientId
         } = dumpInfo;
@@ -50,6 +52,8 @@ class FeaturesPublisher {
         return {
             conferenceStartTime,
             statsSessionId,
+            appId,
+            onwerId,
             meetingUniqueId,
             meetingUrl,
             tenant,
@@ -70,6 +74,8 @@ class FeaturesPublisher {
             conferenceStartTime,
             jaasClientId,
             meetingUrl,
+            appId,
+            onwerId,
             tenant
         } = this._extractCommonDumpFields(dumpInfo, features);
 
@@ -89,6 +95,8 @@ class FeaturesPublisher {
 
         const trackFeaturesRecord = {
             id,
+            appId,
+            onwerId,
             createDate,
             pcId,
             statsSessionId,
@@ -167,6 +175,8 @@ class FeaturesPublisher {
             conferenceStartTime,
             jaasClientId,
             meetingUrl,
+            appId, 
+            onwerId,
             tenant
         } = this._extractCommonDumpFields(dumpInfo, features);
 
@@ -218,6 +228,8 @@ class FeaturesPublisher {
 
             const id = uuid.v4();
             const pcFeaturesRecord = {
+                appId, 
+                onwerId,
                 pcname: pc,
                 id,
                 createDate,
@@ -323,6 +335,8 @@ class FeaturesPublisher {
             meetingUniqueId,
             meetingUrl,
             statsSessionId,
+            appId, 
+            onwerId,
             tenant
         } = this._extractCommonDumpFields(dumpInfo, features);
 
@@ -373,6 +387,8 @@ class FeaturesPublisher {
 
         // The schemaObj needs to match the redshift table schema.
         const meetingFeaturesRecord = {
+            appId,
+            onwerId,
             appEnv: this._appEnv,
             createDate,
             statsSessionId,
