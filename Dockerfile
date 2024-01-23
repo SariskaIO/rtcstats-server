@@ -10,7 +10,6 @@ WORKDIR /$app
 
 RUN adduser --disabled-password $app
 RUN chown -R $app:$app /$app
-
 USER $app
 
 # Use cached node_modules in case package.json doesn't change.

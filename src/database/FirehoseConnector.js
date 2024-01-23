@@ -47,7 +47,6 @@ class FirehoseConnector {
      * @param {*} stream
      */
     _putRecord(schemaObj, stream) {
-        console.log("_putRecord", stream);
         this._firehose.putRecord(
             {
                 DeliveryStreamName: stream /* required */,
@@ -73,7 +72,6 @@ class FirehoseConnector {
      * @param {*} stream
      */
     _putRecordBatch(schemaObjBatch, stream) {
-        console.log("_putRecordBatch", stream);
         this._firehose.putRecordBatch(
             {
                 DeliveryStreamName: stream /* required */,

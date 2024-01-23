@@ -38,7 +38,7 @@ class FeaturesPublisher {
             sessionId: meetingUniqueId,
             conferenceUrl: meetingUrl,
             appId,
-            onwerId,
+            ownerId,
             tenant,
             jaasClientId
         } = dumpInfo;
@@ -53,7 +53,7 @@ class FeaturesPublisher {
             conferenceStartTime,
             statsSessionId,
             appId,
-            onwerId,
+            ownerId,
             meetingUniqueId,
             meetingUrl,
             tenant,
@@ -75,7 +75,7 @@ class FeaturesPublisher {
             jaasClientId,
             meetingUrl,
             appId,
-            onwerId,
+            ownerId,
             tenant
         } = this._extractCommonDumpFields(dumpInfo, features);
 
@@ -96,7 +96,7 @@ class FeaturesPublisher {
         const trackFeaturesRecord = {
             id,
             appId,
-            onwerId,
+            ownerId,
             createDate,
             pcId,
             statsSessionId,
@@ -176,7 +176,7 @@ class FeaturesPublisher {
             jaasClientId,
             meetingUrl,
             appId, 
-            onwerId,
+            ownerId,
             tenant
         } = this._extractCommonDumpFields(dumpInfo, features);
 
@@ -229,7 +229,7 @@ class FeaturesPublisher {
             const id = uuid.v4();
             const pcFeaturesRecord = {
                 appId, 
-                onwerId,
+                ownerId,
                 pcname: pc,
                 id,
                 createDate,
@@ -336,7 +336,7 @@ class FeaturesPublisher {
             meetingUrl,
             statsSessionId,
             appId, 
-            onwerId,
+            ownerId,
             tenant
         } = this._extractCommonDumpFields(dumpInfo, features);
 
@@ -388,7 +388,7 @@ class FeaturesPublisher {
         // The schemaObj needs to match the redshift table schema.
         const meetingFeaturesRecord = {
             appId,
-            onwerId,
+            ownerId,
             appEnv: this._appEnv,
             createDate,
             statsSessionId,
