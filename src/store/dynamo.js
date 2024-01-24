@@ -25,7 +25,7 @@ const Document = dynamoose.model(
         baseDumpId: String,
         userId: String,
         appId: String,
-        ownerId: String,
+        ownerId: Number,
         app: String,
         sessionId: String,
         startDate: Number,
@@ -66,7 +66,7 @@ async function saveEntry(data) {
             app: app ?? 'undefined',
             baseDumpId,
             appId,
-            ownerId,
+            ownerId: +ownerId,
             startDate,
             endDate
         };
