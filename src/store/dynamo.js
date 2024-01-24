@@ -24,6 +24,8 @@ const Document = dynamoose.model(
         dumpId: String,
         baseDumpId: String,
         userId: String,
+        appId: String,
+        ownerId: String,
         app: String,
         sessionId: String,
         startDate: Number,
@@ -50,7 +52,9 @@ async function saveEntry(data) {
             sessionId, // sessionId naming here might be confusing, this actually refers to the meeting unique id
             baseDumpId,
             startDate,
-            endDate
+            endDate,
+            ownerId,
+            appId
         } = data;
 
         const entry = {
@@ -61,6 +65,8 @@ async function saveEntry(data) {
             sessionId: sessionId ?? 'undefined',
             app: app ?? 'undefined',
             baseDumpId,
+            appId,
+            ownerId,
             startDate,
             endDate
         };
