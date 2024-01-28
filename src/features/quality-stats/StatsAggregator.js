@@ -327,7 +327,8 @@ class StatsAggregator {
         Object.keys(extractedData).forEach(pc => {
             const pcData = extractedData[pc];
 
-            resultMap[pc] = { isP2P: pcData.isP2P,
+            resultMap[pc] = {
+                isP2P: pcData.isP2P,
                 usesRelay: pcData.usesRelay,
                 dtlsErrors: pcData.dtlsErrors,
                 dtlsFailure: pcData.dtlsFailure,

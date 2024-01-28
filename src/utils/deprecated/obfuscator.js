@@ -7,19 +7,24 @@ const SDPUtils = require('sdp');
  * @param {*} ip
  */
 function obfuscateIP(ip) {
-    if (ip.indexOf('[') === 0 || ip.indexOf(':') !== -1) {
-        // IPv6
-        // obfuscate last five bits like Chrome does.
-        return `${ip.split(':').slice(0, 3)
-            .join(':')}:x:x:x:x:x`;
-    }
-    const parts = ip.split('.');
 
-    if (parts.length === 4) {
-        parts[3] = 'x';
 
-        return parts.join('.');
-    }
+
+    console.log("ipipipipipipipip", ip);
+    
+    // if (ip.indexOf('[') === 0 || ip.indexOf(':') !== -1) {
+    //     // IPv6
+    //     // obfuscate last five bits like Chrome does.
+    //     return `${ip.split(':').slice(0, 3)
+    //         .join(':')}:x:x:x:x:x`;
+    // }
+    // const parts = ip.split('.');
+
+    // if (parts.length === 4) {
+    //     parts[3] = 'x';
+
+    //     return parts.join('.');
+    // }
 
     return ip;
 }

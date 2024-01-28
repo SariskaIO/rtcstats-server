@@ -431,6 +431,37 @@ class FeaturesPublisher {
     }
 
     /**
+     * Publish all peer connection features..
+     *
+     * @param {Object} dumpInfo - Session metadata.
+     * @param {Object} features - All the current session features.
+     * @param {String} createDate - SQL formatted timestamp string.
+     */
+    _publishE2Eeatures(dumpInfo, features, createDate) {
+        const {
+            meetingUniqueId,
+            statsSessionId,
+            conferenceStartTime,
+            jaasClientId,
+            meetingUrl,
+            appId, 
+            ownerId,
+            tenant
+        } = this._extractCommonDumpFields(dumpInfo, features);
+
+        const {
+            e2epings,
+        } = features;
+        
+        if (!e2epings) {
+            return;
+        }
+        Object.keys(e2epings).forEach(ping => {
+            this._dbConnector.putE2EFeaturesRecord({...e2epings[ping], statsSessionId, remoteEndpointId: ping});
+        });
+    }
+
+    /**
      * Publish extracted features.
      *
      * @param {Object} param0 - Object containing session metadata and extracted features.
@@ -438,12 +469,15 @@ class FeaturesPublisher {
     publish({ dumpInfo, features }) {
         const { clientId: statsSessionId } = dumpInfo;
         const createDate = getSQLTimestamp();
-
+        
         logger.info(`[FeaturesPublisher] Publishing data for ${statsSessionId}`);
+
+        console.log("[FeaturesPublisher]PC_0", features.aggregates.PC_0.candidatePairData)
+        console.log("[FeaturesPublisher]PC_1", features.aggregates.PC_1.candidatePairData)
 
         this._publishMeetingFeatures(dumpInfo, features, createDate);
         this._publishPCFeatures(dumpInfo, features, createDate);
-
+        this._publishE2Eeatures(dumpInfo, features, createDate);
         this._publishFaceLandmarks(features, statsSessionId);
         this._publishDominantSpeakerEvents(features, statsSessionId);
     }

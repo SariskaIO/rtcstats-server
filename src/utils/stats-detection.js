@@ -120,6 +120,7 @@ function extractCandidatePairDataCommon(statsEntry, candidatePairReport) {
         localCandidateId = '',
         id = ''
     } = candidatePairReport;
+
     const {
         [localCandidateId]: localCandidateReport = {},
         [remoteCandidateId]: remoteCandidateReport = {}
@@ -186,9 +187,7 @@ function extractCandidatePairDataStandard(statsEntry, report) {
     const { type = '', selectedCandidatePairId = '' } = report;
 
     if (type === 'transport' && selectedCandidatePairId) {
-
         const { [selectedCandidatePairId]: selectedCandidatePair = {} } = statsEntry;
-
         return extractCandidatePairDataCommon(statsEntry, selectedCandidatePair);
     }
 }

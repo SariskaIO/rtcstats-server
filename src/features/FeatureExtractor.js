@@ -23,7 +23,6 @@ class FeatureExtractor {
      * @param {*} statsDumpInfo
      */
     constructor(dumpInfo) {
-
         const {
             dumpPath,
             endpointId,
@@ -170,7 +169,6 @@ class FeatureExtractor {
 
         // We copy the individual properties instead of just the whole object to protect against
         // unexpected changes in the deploymentInfo format that the client is sending.
-
         this.features.deploymentInfo = {
             crossRegion,
             envType,
@@ -187,7 +185,6 @@ class FeatureExtractor {
      * @param {*} dumpLineObj
      */
     _handleConnectionStateChange = dumpLineObj => {
-
         this.collector.processConnectionState(dumpLineObj);
     };
 
@@ -196,12 +193,10 @@ class FeatureExtractor {
      * @param {*} dumpLineObj
      */
     _handleIceConnectionStateChange = dumpLineObj => {
-
         this.collector.processIceConnectionState(dumpLineObj);
     };
 
     _handleFaceLandmarks = (dumpLineObj, requestSize) => {
-
         const [ , , data ] = dumpLineObj;
 
         const { sentiment, metrics, faceLandmarksTimestamps } = this.features;
@@ -232,7 +227,6 @@ class FeatureExtractor {
      * @param {*} timestamp
      */
     _handleDominantSpeaker = (dumpLineObj, requestSize) => {
-
         const [ , , data, timestamp ] = dumpLineObj;
 
         assert(timestamp, 'timestamp field missing from dominantSpeaker data');
@@ -326,9 +320,7 @@ class FeatureExtractor {
 
     _handleE2eRtt = dumpLineObj => {
         const [ , , line ] = dumpLineObj;
-
         const { remoteEndpointId, rtt, remoteRegion } = line;
-
         if (!('e2epings' in this.features)) {
             this.features.e2epings = {};
         }
@@ -337,6 +329,7 @@ class FeatureExtractor {
             remoteRegion,
             rtt
         };
+
     };
 
     /**
@@ -449,11 +442,9 @@ class FeatureExtractor {
         for await (const dumpLine of dumpReadLineI) {
             const requestSize = sizeof(dumpLine);
             const dumpLineObj = JSON.parse(dumpLine);
-
+    
             assert(Array.isArray(dumpLineObj), 'Unexpected dump format');
-
             const [ requestType, , , ] = dumpLineObj;
-
             if (this.extractFunctions[requestType]) {
                 this.extractFunctions[requestType](dumpLineObj, requestSize);
             } else {
