@@ -5,166 +5,56 @@ const { percentOf, round, standardizedMoment, average } = require('../../utils/u
  */
 class StatsAggregator {
     /**
-     * Converts a series of ever increasing values and returns a series of differences
+     * Publish features related to a specific peer connection track.
      *
-     * @param {Array} series - an array of increasing numbers
-     * @return {Array}
+     * @param {Object} track - extracted track features.
+     * @param {Object} param1 - additional track related metadata.
      */
-    _calculateSeriesDifferences(series) {
-        const result = [];
-
-        if (series.length > 0) {
-            for (let i = 1; i < series.length; i++) {
-                result.push(series[i] - series[i - 1]);
+    calculateFreeze(packets, packetsLost, freezeThreshold = 5) {
+        /**
+         * Calculates the audio freeze rate, handles freezes, logs stats, and returns freeze percentage and duration.
+         *
+         * @param {number[]} packets - Array of cumulative packets received.
+         * @param {number[]} packetsLost - Array of packets lost at each point in time.
+         * @param {number} freezeThreshold - Threshold for freeze detection (percentage).
+         * @returns {{ freezePercentage: number, freezeDuration: number }} - Object containing freeze percentage and duration.
+         */
+    
+        if (packets.length === 0 || packets.length !== packetsLost.length) {
+            console.log("Invalid input arrays");
+            return null;
+        }
+    
+        let freezeStartTime = null;
+        let totalFreezeDuration = 0;
+        let totalPacketsReceived = packets[packets.length - 1];
+        let totalPacketsLost = 0;
+    
+        for (let i = 1; i < packets.length; i++) {
+            const currentPacketsReceived = packets[i] - packets[i - 1]; // Calculate current packets received
+            const currentPacketsLost = packetsLost[i]; // Use packetsLost directly
+    
+            const freezeRate = (currentPacketsLost / currentPacketsReceived) * 100;
+    
+            if (freezeRate >= freezeThreshold) {
+                if (!freezeStartTime) {
+                    freezeStartTime = new Date(); // Start recording freeze timeframe
+                }
+            } else if (freezeStartTime) {
+                const freezeEndTime = new Date();
+                const freezeDuration = (freezeEndTime - freezeStartTime) / 1000; // Convert to seconds
+                totalFreezeDuration += freezeDuration;
+                totalPacketsLost += currentPacketsLost;
+                freezeStartTime = null; // Reset freeze start time
             }
         }
-
-        return result;
-    }
-
-    /**
-     * The duration for which the PeerConnection was active since ice connection was successful.
-     *
-     * @param {*} pcData
-     */
-    _calculateSessionDurationMs(pcData) {
-        const { startTime, endTime } = pcData;
-
-        if (startTime && endTime && (endTime > startTime)) {
-            return endTime - startTime;
+        
+        if (totalPacketsLost === 0) {
+            return { freezePercentage: 0, freezeDuration: 0 };
         }
-
-        return 0;
-    }
-
-    /**
-     * Calculate the stats for a single track.
-     *
-     * @param {Array} packets - a list of numbers of received/send packets
-     * @param {Array} packetsLost - a list of number of missing packets
-     * @param {String} mediaType - indicated if the track was audio or video
-     * @param {String} videoType - optional parameter that indicates the video type of the track
-     * @return {Object}
-     */
-    _calculateSingleTrackStats(trackStats, mediaType, ssrc) {
-        const stats = {
-            mediaType,
-            ssrc,
-            packets: 0,
-            packetsLost: 0,
-            packetsLostPct: 0,
-            packetsLostVariance: 0,
-            concealedPercentage: 0
-        };
-
-        const { packets, packetsLost, samplesReceived, concealedSamples, startTime, endTime } = trackStats;
-
-        if (!packets.length) {
-            return stats;
-        }
-        stats.startTime = startTime;
-        stats.endTime = endTime;
-        const pcts = packets.at(-1);
-
-        stats.packets = pcts;
-        const pctsLost = packetsLost.at(-1);
-
-        stats.packetsLost = pctsLost;
-
-        if (pcts
-            && pctsLost > 0
-            && pctsLost < pcts) {
-            stats.packetsLostPct = percentOf(pctsLost, pcts) || 0;
-        }
-
-        stats.packetsLostVariance = standardizedMoment(
-            this._calculateSeriesDifferences(packetsLost), 2);
-
-        if (samplesReceived.length && concealedSamples.length) {
-            const concealed = concealedSamples.at(-1);
-            const received = samplesReceived.at(-1);
-
-            stats.concealedPercentage = percentOf(concealed, received) || 0;
-        }
-
-        return stats;
-    }
-
-    /**
-     * Gets all the tracks that are held in the specified peer connection. It includes the "vacuumed" tracks, if there
-     * are any.
-     *
-     * @param {Object} pcData - Data associated with a single peer connection.
-     * @returns {array} - An array of all the tracks.
-     */
-    _getTracks(pcData) {
-        // pcData is a dictionary of objects related to a specific peer connection. We store tracks by their ssrc, so
-        // the key is the ssrc and the track data is the value of the dictionary entry. We get the tracks by checking
-        // that the mediaType attribute exists. Other objects that we store in the pcData dictionary don't have the
-        // mediaType attribute.
-        let tracks = Object.keys(pcData)
-            .filter(pcDataEntry => pcData[pcDataEntry] && pcData[pcDataEntry].mediaType)
-            .map(trackSsrc => pcData[trackSsrc]);
-
-        if (pcData.vacuumedTracks) {
-            // Only keep tracks that have their mediaType set. Normally every vacuumed track should have a mediaType
-            // but -- I guess -- it's possible to receive the `setVideoType` message from the client and no stats for
-            // a track that came up and went away very quickly for example.
-            tracks = tracks.concat(pcData.vacuumedTracks.filter(track => track.mediaType));
-        }
-
-        return tracks;
-    }
-
-    /**
-     * Calculate the stats for all tracks within a single peer connection
-     *
-     * @param {Object} pcData - Data associated with a single peer connection.
-     * @return {Object} - two maps with stats for all received and send tracks.
-     */
-    _calculateTrackStats(pcData) {
-        const senderTracks = [];
-        const receiverTracks = [];
-
-        const tracks = this._getTracks(pcData);
-
-        tracks.forEach(track => {
-            const { packetsSentLost = [], packetsSent = [], packetsReceivedLost = [],
-                packetsReceived = [], totalSamplesReceived = [], concealedSamplesReceived = [],
-                mediaType = '', ssrc, videoType, startTime, endTime } = track;
-
-            let mediaVideoType = mediaType;
-
-            if (videoType) {
-                // This parameter is optional and only for video tracks.
-                mediaVideoType += `/${videoType}`;
-            }
-
-
-            const trackStats = { samplesReceived: totalSamplesReceived,
-                concealedSamples: concealedSamplesReceived,
-                startTime,
-                endTime };
-
-            if (packetsSentLost.length && packetsSent.length) {
-                trackStats.packets = packetsSent;
-                trackStats.packetsLost = packetsSentLost;
-
-                senderTracks.push(this._calculateSingleTrackStats(trackStats, mediaVideoType, ssrc));
-            }
-
-            if (packetsReceivedLost.length && packetsReceived.length) {
-                trackStats.packets = packetsReceived;
-                trackStats.packetsLost = packetsReceivedLost;
-
-                receiverTracks.push(this._calculateSingleTrackStats(trackStats, mediaVideoType, ssrc));
-            }
-        });
-
-        return {
-            receiverTracks,
-            senderTracks
-        };
+    
+        const totalFreezePercentage = (totalPacketsLost / totalPacketsReceived) * 100;    
+        return { freezePercentage: totalFreezePercentage, freezeDuration: totalFreezeDuration };
     }
 
     /**
@@ -221,6 +111,171 @@ class StatsAggregator {
             totalReceivedPacketsLost,
             totalPacketsReceived,
             receivedPacketsLostPct
+        };
+    }
+
+
+    /**
+     * Converts a series of ever increasing values and returns a series of differences
+     *
+     * @param {Array} series - an array of increasing numbers
+     * @return {Array}
+     */
+    _calculateSeriesDifferences(series) {
+        const result = [];
+
+        if (series.length > 0) {
+            for (let i = 1; i < series.length; i++) {
+                result.push(series[i] - series[i - 1]);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * The duration for which the PeerConnection was active since ice connection was successful.
+     *
+     * @param {*} pcData
+     */
+    _calculateSessionDurationMs(pcData) {
+        const { startTime, endTime } = pcData;
+
+        if (startTime && endTime && (endTime > startTime)) {
+            return endTime - startTime;
+        }
+
+        return 0;
+    }
+
+    /**
+     * Calculate the stats for a single track.
+     *
+     * @param {Array} packets - a list of numbers of received/send packets
+     * @param {Array} packetsLost - a list of number of missing packets
+     * @param {String} mediaType - indicated if the track was audio or video
+     * @param {String} videoType - optional parameter that indicates the video type of the track
+     * @return {Object}
+     */
+    _calculateSingleTrackStats(trackStats, mediaType, ssrc) {
+        const stats = {
+            mediaType,
+            ssrc,
+            packets: 0,
+            packetsLost: 0,
+            packetsLostPct: 0,
+            packetsLostVariance: 0,
+            concealedPercentage: 0
+        };
+
+        const { packets, packetsLost, samplesReceived, concealedSamples, startTime, endTime } = trackStats;
+        const { freezeDuration, freezePercentage } = this.calculateFreeze(packets, packetsLost);
+        stats.freezeDuration = freezeDuration;
+        stats.freezePercentage = freezePercentage;
+
+        if (!packets.length) {
+            return stats;
+        }
+        stats.startTime = startTime;
+        stats.endTime = endTime;
+        const pcts = packets.at(-1);
+
+        stats.packets = pcts;
+        const pctsLost = packetsLost.at(-1);
+
+        stats.packetsLost = pctsLost;
+
+        if (pcts
+            && pctsLost > 0
+            && pctsLost < pcts) {
+            stats.packetsLostPct = percentOf(pctsLost, pcts) || 0;
+        }
+
+        stats.packetsLostVariance = standardizedMoment(
+            this._calculateSeriesDifferences(packetsLost), 2);
+
+        if (samplesReceived.length && concealedSamples.length) {
+            const concealed = concealedSamples.at(-1);
+            const received = samplesReceived.at(-1);
+
+            stats.concealedPercentage = percentOf(concealed, received) || 0;
+        }
+        return stats;
+    }
+
+    /**
+     * Gets all the tracks that are held in the specified peer connection. It includes the "vacuumed" tracks, if there
+     * are any.
+     *
+     * @param {Object} pcData - Data associated with a single peer connection.
+     * @returns {array} - An array of all the tracks.
+     */
+    _getTracks(pcData) {
+        // pcData is a dictionary of objects related to a specific peer connection. We store tracks by their ssrc, so
+        // the key is the ssrc and the track data is the value of the dictionary entry. We get the tracks by checking
+        // that the mediaType attribute exists. Other objects that we store in the pcData dictionary don't have the
+        // mediaType attribute.
+        let tracks = Object.keys(pcData)
+            .filter(pcDataEntry => pcData[pcDataEntry] && pcData[pcDataEntry].mediaType)
+            .map(trackSsrc => pcData[trackSsrc]);
+
+        if (pcData.vacuumedTracks) {
+            // Only keep tracks that have their mediaType set. Normally every vacuumed track should have a mediaType
+            // but -- I guess -- it's possible to receive the `setVideoType` message from the client and no stats for
+            // a track that came up and went away very quickly for example.
+            tracks = tracks.concat(pcData.vacuumedTracks.filter(track => track.mediaType));
+        }
+
+        return tracks;
+    }
+
+    /**
+     * Calculate the stats for all tracks within a single peer connection
+     *
+     * @param {Object} pcData - Data associated with a single peer connection.
+     * @return {Object} - two maps with stats for all received and send tracks.
+     */
+    _calculateTrackStats(pcData) {
+        const senderTracks = [];
+        const receiverTracks = [];
+
+        const tracks = this._getTracks(pcData);
+
+        tracks.forEach(track => {
+            const { packetsSentLost = [], packetsSent = [], packetsReceivedLost = [],
+                packetsReceived = [], totalSamplesReceived = [], concealedSamplesReceived = [],
+                mediaType = '', ssrc, videoType, startTime, endTime } = track;
+
+            let mediaVideoType = mediaType;
+
+            if (videoType) {
+                // This parameter is optional and only for video tracks.
+                mediaVideoType += `/${videoType}`;
+            }
+
+            const trackStats = { 
+                samplesReceived: totalSamplesReceived,
+                concealedSamples: concealedSamplesReceived,
+                startTime,
+                endTime 
+            };
+
+            if (packetsSentLost.length && packetsSent.length) {
+                trackStats.packets = packetsSent;
+                trackStats.packetsLost = packetsSentLost;
+                senderTracks.push(this._calculateSingleTrackStats(trackStats, mediaVideoType, ssrc));
+            }
+
+            if (packetsReceivedLost.length && packetsReceived.length) {
+                trackStats.packets = packetsReceived;
+                trackStats.packetsLost = packetsReceivedLost;
+                receiverTracks.push(this._calculateSingleTrackStats(trackStats, mediaVideoType, ssrc));
+            }
+        });
+
+        return {
+            receiverTracks,
+            senderTracks
         };
     }
 

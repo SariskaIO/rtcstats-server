@@ -10,7 +10,6 @@ function obfuscateIP(ip) {
 
 
 
-    console.log("ipipipipipipipip", ip);
     
     // if (ip.indexOf('[') === 0 || ip.indexOf(':') !== -1) {
     //     // IPv6

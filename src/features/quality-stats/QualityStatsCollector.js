@@ -151,7 +151,6 @@ class QualityStatsCollector {
     _collectPacketLossData(pcData, statsEntry, report, timestamp) {
         const outboundPacketLossData = this.statsExtractor.extractOutboundPacketLoss(statsEntry, report);
         const inboundPacketLossData = this.statsExtractor.extractInboundPacketLoss(statsEntry, report);
-
         if (outboundPacketLossData) {
             const { ssrc, mediaType, packetsLost, packetsSent } = outboundPacketLossData;
 
@@ -532,6 +531,7 @@ class QualityStatsCollector {
      * @param {number} timestamp - the UNIX timestamp of when this stats entry was observed on the client endpoint.
      */
     processStatsEntry(pc, statsEntry, timestamp) {
+
         // If no collector was present simply skip.
         // TODO at this point we should avoid this call altogether.
         if (!this.statsExtractor) {

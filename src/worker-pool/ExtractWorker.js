@@ -32,7 +32,6 @@ parentPort.on('message', request => {
  * @param {*} request
  */
 async function processRequest(request) {
-    console.log("Extract worker process request: %o", request);
     try {
         const featureExtractor = new FeatureExtractor(request.body);
         const features = await featureExtractor.extract();

@@ -126,7 +126,6 @@ class FirehoseConnector {
      * @param {*} trackRecord
      */
     putTrackFeaturesRecord(trackFeaturesRecord) {
-        console.log('trackFeaturesRecord', trackFeaturesRecord);
         this._putRecord(trackFeaturesRecord, this._trackStatsStream);
     }
 
@@ -135,7 +134,6 @@ class FirehoseConnector {
      * @param {*} trackRecord
      */
     putE2EFeaturesRecord(e2ePingFeature) {
-        console.log("e2ePingFeature", e2ePingFeature);
         this._putRecord(e2ePingFeature, this._e2ePingStream);
     }
 
@@ -144,7 +142,6 @@ class FirehoseConnector {
      * @param {*} pcRecord
      */
     putPCFeaturesRecord(pcFeaturesRecord) {
-        console.log("pcFeaturesRecord", pcFeaturesRecord);
         this._putRecord(pcFeaturesRecord, this._pcStatsStream);
     }
 
@@ -153,7 +150,6 @@ class FirehoseConnector {
      * @param {*} meetingFeaturesRecord
      */
     putMeetingFeaturesRecord(meetingFeaturesRecord) {
-        console.log("meetingFeaturesRecord", meetingFeaturesRecord);
         this._putRecord(meetingFeaturesRecord, this._meetingStatsStream);
     }
 
@@ -162,7 +158,6 @@ class FirehoseConnector {
      * @param {*} faceLandmarkRecords
      */
     putFaceLandmarkRecords(faceLandmarkRecords) {
-        console.log("putFaceLandmarkRecords",faceLandmarkRecords);
         this._putRecords(faceLandmarkRecords, this._faceLandmarksStream);
     }
 
@@ -171,7 +166,6 @@ class FirehoseConnector {
      * @param {*} meetingEventRecords
      */
     putMeetingEventRecords(meetingEventRecords) {
-        console.log("meetingEventRecords", meetingEventRecords);
         this._putRecords(meetingEventRecords, this._meetingEventStream);
     }
 }

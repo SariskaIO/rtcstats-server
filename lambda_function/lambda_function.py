@@ -13,7 +13,6 @@ const executionParams = {
 
 export const handler = async (event, context) => {
     // Extract data from the event
-    console.log("eventeventevent", event);
     const records = event.records;
 
     try {
@@ -109,6 +108,5 @@ function prepareSqlStatement(tableName, payload) {
 
     const sql = `INSERT INTO public.${tableName} (${fields.join(', ')}) VALUES (${sqlValues.join(', ')});`;
 
-    console.log("sqlsqlsqlsql", sql);
     return sql;
 }

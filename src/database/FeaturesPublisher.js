@@ -4,6 +4,8 @@ const uuid = require('uuid');
 
 const logger = require('../logging');
 const { getSQLTimestamp } = require('../utils/utils');
+const console = require('console');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 /**
  * Service that publishes extracted features to a provided data storage, currently the
@@ -59,14 +61,8 @@ class FeaturesPublisher {
             tenant,
             jaasClientId
         };
-    }
+    } 
 
-    /**
-     * Publish features related to a specific peer connection track.
-     *
-     * @param {Object} track - extracted track features.
-     * @param {Object} param1 - additional track related metadata.
-     */
     _publishTrackFeatures(track, dumpInfo, features, { direction, isP2P, pcId, createDate }) {
         const {
             meetingUniqueId,
@@ -88,7 +84,9 @@ class FeaturesPublisher {
             packetsLostVariance,
             startTime,
             endTime,
-            concealedPercentage
+            concealedPercentage,
+            freezeDuration,
+            freezePercentage
         } = track;
 
         const id = uuid.v4();
@@ -112,6 +110,8 @@ class FeaturesPublisher {
             concealedPercentage,
             conferenceStartTime,
             jaasClientId,
+            freezeDuration,
+            freezePercentage,
             meetingUrl,
             tenant
         };
@@ -126,6 +126,7 @@ class FeaturesPublisher {
 
         this._dbConnector.putTrackFeaturesRecord(trackFeaturesRecord);
     }
+
 
     /**
      * Publish all peer connection track features.
@@ -179,7 +180,6 @@ class FeaturesPublisher {
             ownerId,
             tenant
         } = this._extractCommonDumpFields(dumpInfo, features);
-
         const {
             aggregates: pcRecords = { }
         } = features;
@@ -328,7 +328,7 @@ class FeaturesPublisher {
      * @param {Object} features - All the current session features.
      * @param {String} createDate - SQL formatted timestamp string.
      */
-    _publishMeetingFeatures(dumpInfo, features, createDate) {
+   async _publishMeetingFeatures(dumpInfo, features, createDate) {
         const {
             conferenceStartTime,
             jaasClientId,
@@ -427,6 +427,44 @@ class FeaturesPublisher {
             jaasClientId
         };
 
+        // extract location from ip 
+
+        // Assuming ipAddress is declared somewhere before this code
+        let ipAddress;
+
+        const processCandidatePairData = (candidatePairData) => {
+            if (candidatePairData?.localCandidateType === "srflx" || candidatePairData?.localCandidateType === "prflx") {
+                ipAddress = candidatePairData?.localAddress;
+            }
+        };
+
+        processCandidatePairData(features?.aggregates?.PC_0?.candidatePairData);
+        processCandidatePairData(features?.aggregates?.PC_1?.candidatePairData);
+
+        const fetchData = async () => {
+            try {
+                const apiUrl = `https://freeipapi.com/api/json/${ipAddress}`;
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const data = await response.json();    
+                meetingFeaturesRecord.latitude = data.latitude;
+                meetingFeaturesRecord.longitude = data.longitude;
+                meetingFeaturesRecord.cityName = data.cityName;
+                meetingFeaturesRecord.regionName = data.regionName;
+                meetingFeaturesRecord.continent = data.continent;
+                meetingFeaturesRecord.timeZone = data.timeZone;
+                meetingFeaturesRecord.countryName = data.countryName;
+            } catch (error) {
+                console.error('Error fetching data:', error.message);
+                // You might want to handle the error in a way appropriate to your application
+            }
+        };
+        
+        // Call the async function
+
+        await fetchData();        
         this._dbConnector.putMeetingFeaturesRecord(meetingFeaturesRecord);
     }
 
@@ -456,6 +494,7 @@ class FeaturesPublisher {
         if (!e2epings) {
             return;
         }
+
         Object.keys(e2epings).forEach(ping => {
             this._dbConnector.putE2EFeaturesRecord({...e2epings[ping], statsSessionId, remoteEndpointId: ping});
         });
@@ -469,12 +508,7 @@ class FeaturesPublisher {
     publish({ dumpInfo, features }) {
         const { clientId: statsSessionId } = dumpInfo;
         const createDate = getSQLTimestamp();
-        
         logger.info(`[FeaturesPublisher] Publishing data for ${statsSessionId}`);
-
-        console.log("[FeaturesPublisher]PC_0", features.aggregates.PC_0.candidatePairData)
-        console.log("[FeaturesPublisher]PC_1", features.aggregates.PC_1.candidatePairData)
-
         this._publishMeetingFeatures(dumpInfo, features, createDate);
         this._publishPCFeatures(dumpInfo, features, createDate);
         this._publishE2Eeatures(dumpInfo, features, createDate);

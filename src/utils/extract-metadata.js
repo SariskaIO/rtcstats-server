@@ -48,7 +48,6 @@ function calculateInboundOutboundStats(stats, metricType, type, metricFilter) {
 }
 
 function processConnections (peerConnections, data) {
-  console.log("connectionIds, data",peerConnections, data);
   let recieverStats = peerConnections.PC_0;
   let senderStats = peerConnections.PC_1;
   // Change "reciever" to "receiver" in the following line
