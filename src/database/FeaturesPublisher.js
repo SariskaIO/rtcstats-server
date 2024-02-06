@@ -284,13 +284,20 @@ class FeaturesPublisher {
      * @param {Object} features - All the current session features.
      * @param {String} statsSessionId - rtcstats-server session id
      */
-    _publishFaceLandmarks(features, statsSessionId) {
+    _publishFaceLandmarks(dumpInfo, features, statsSessionId) {
+        const {
+            appId, 
+            ownerId
+        } = this._extractCommonDumpFields(dumpInfo, features);
+
         const { faceLandmarksTimestamps } = features;
 
         const faceLandmarkRecords = faceLandmarksTimestamps.map(({ timestamp, faceLandmarks }) => {
             return {
                 id: uuid.v4(),
                 statsSessionId,
+                appId,
+                ownerId,
                 timestamp,
                 faceLandmarks
             };
@@ -306,14 +313,20 @@ class FeaturesPublisher {
      * @param {Object} features - All the current session features.
      * @param {String} statsSessionId - rtcstats-server session id
      */
-    _publishDominantSpeakerEvents(features, statsSessionId) {
+    _publishDominantSpeakerEvents(dumpInfo, features, statsSessionId) {
         const { dominantSpeakerEvents } = features;
+        const {
+            appId, 
+            ownerId
+        } = this._extractCommonDumpFields(dumpInfo, features);
 
         const dominantSpeakerEventRecords = dominantSpeakerEvents.map(({ type, timestamp }) => {
             return {
                 id: uuid.v4(),
                 statsSessionId,
                 timestamp,
+                appId,
+                ownerId,
                 type
             };
         });
@@ -496,7 +509,7 @@ class FeaturesPublisher {
         }
 
         Object.keys(e2epings).forEach(ping => {
-            this._dbConnector.putE2EFeaturesRecord({...e2epings[ping], statsSessionId, remoteEndpointId: ping});
+            this._dbConnector.putE2EFeaturesRecord({...e2epings[ping], statsSessionId, appId, ownerId, remoteEndpointId: ping});
         });
     }
 
@@ -512,8 +525,8 @@ class FeaturesPublisher {
         this._publishMeetingFeatures(dumpInfo, features, createDate);
         this._publishPCFeatures(dumpInfo, features, createDate);
         this._publishE2Eeatures(dumpInfo, features, createDate);
-        this._publishFaceLandmarks(features, statsSessionId);
-        this._publishDominantSpeakerEvents(features, statsSessionId);
+        this._publishFaceLandmarks(dumpInfo,features, statsSessionId);
+        this._publishDominantSpeakerEvents(dumpInfo,features, statsSessionId);
     }
 }
 

@@ -126,6 +126,7 @@ class FirehoseConnector {
      * @param {*} trackRecord
      */
     putTrackFeaturesRecord(trackFeaturesRecord) {
+
         this._putRecord(trackFeaturesRecord, this._trackStatsStream);
     }
 
