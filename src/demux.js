@@ -3,9 +3,11 @@ const sizeof = require('object-sizeof');
 const path = require('path');
 const { Writable } = require('stream');
 const util = require('util');
+const jwt = require('jsonwebtoken');
 
 const PromCollector = require('./metrics/PromCollector.js');
 const { uuidV4 } = require('./utils/utils.js');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 
 const cwd = process.cwd();
@@ -195,6 +197,7 @@ class DemuxSink extends Writable {
 
         this.sinkMap.set(id, sinkData);
 
+
         sink.on('error', error => this.log.error('[Demux] sink on error id: ', id, ' error:', error));
 
         // The close event should be emitted both on error and happy flow.
@@ -301,6 +304,46 @@ class DemuxSink extends Writable {
         // Metadata associated with a sink will be propagated through an event to listeners when the sink closes,
         // either on an explicit close or when the timeout mechanism triggers.
         case 'identity':
+            const secret = process.env.JWT_TOKEN_SECRET_VALUE;
+            // Call the async function
+            // Assuming user is an object containing the data you want to include in the token
+            if (data && data[2]) {
+                const identityData  = data[2];
+                const ownerId  = identityData.ownerId;
+                let accountServiceUrl;
+                console.log("identityData", identityData);
+
+                if (identityData?.analytics?.rtcstatsEndpoint?.indexOf("rtcstats-server.sariska.io")>=0) { 
+                    accountServiceUrl = `https://api.sariska.io/api/v1/misc/fetch-project-config`
+                } else {
+                    accountServiceUrl = `https://api.dev.sariska.io/api/v1/misc/fetch-project-config`
+                }
+                const user = {
+                    id: ownerId,
+                    ownerId: ownerId
+                };
+                // Signing the token
+                const token = jwt.sign(user, secret, { expiresIn: '1h' }); // Adjust expiresIn according to your requirements
+                // Now you have the JWT token
+                try {
+                    const response = await fetch(accountServiceUrl, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    // Assuming meetingFeaturesRecord is defined elsewhere in your code
+                    console.log("data", data);
+                    if (!data?.projectConfig?.analytics) {
+                        return  this._sinkClose(sinkData);
+                    }
+                } catch (error) {
+                    console.error('Error fetching data:', error.message);
+                }
+            }
             return this._sinkUpdateMetadata(sinkData, data);
 
         // Generic request with stats data, simply write it to the sink.
