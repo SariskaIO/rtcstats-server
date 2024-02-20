@@ -304,8 +304,6 @@ class DemuxSink extends Writable {
         // Metadata associated with a sink will be propagated through an event to listeners when the sink closes,
         // either on an explicit close or when the timeout mechanism triggers.
         case 'identity':
-            const secret = process.env.JWT_TOKEN_SECRET_VALUE;
-            // Call the async function
             // Assuming user is an object containing the data you want to include in the token
             if (data && data[2]) {
                 const identityData  = data[2];
@@ -318,17 +316,10 @@ class DemuxSink extends Writable {
                 } else {
                     accountServiceUrl = `https://api.dev.sariska.io/api/v1/misc/fetch-project-config`
                 }
-                const user = {
-                    id: ownerId,
-                    ownerId: ownerId
-                };
-                // Signing the token
-                const token = jwt.sign(user, secret, { expiresIn: '1h' }); // Adjust expiresIn according to your requirements
-                // Now you have the JWT token
                 try {
                     const response = await fetch(accountServiceUrl, {
                         headers: {
-                            'Authorization': `Bearer ${token}`
+                            'Authorization': `Bearer ${identityData.token}`
                         }
                     });
                     if (!response.ok) {
