@@ -30,7 +30,7 @@ class DemuxSink extends Writable {
      * @param {boolean} persistDump - Flag used for generating a complete dump of the data coming to the stream.
      * Required when creating mock tests.
      */
-    constructor({ dumpFolder, clientDetails, log, persistDump = false }) {
+    constructor({ dumpFolder, clientDetails, log, persistDump = false, client }) {
         super({ objectMode: true });
 
         this.dumpFolder = dumpFolder;
@@ -39,6 +39,7 @@ class DemuxSink extends Writable {
         this.timeoutId = -1;
         this.sinkMap = new Map();
         this.persistDump = persistDump;
+        this.client =  client;
 
         // TODO move this as a separate readable/writable stream so we don't pollute this class.
         if (this.persistDump) {
@@ -116,7 +117,7 @@ class DemuxSink extends Writable {
      */
     _sinkClose({ id, sink }) {
         this.log.info('[Demux] close-sink %s', id);
-
+        console.log("_sinkClose");
         sink.end();
     }
 
@@ -307,10 +308,9 @@ class DemuxSink extends Writable {
             // Assuming user is an object containing the data you want to include in the token
             if (data && data[2]) {
                 const identityData  = data[2];
-                const ownerId  = identityData.ownerId;
                 let accountServiceUrl;
                 console.log("identityData", identityData);
-
+                
                 if (identityData?.analytics?.rtcstatsEndpoint?.indexOf("rtcstats-server.sariska.io")>=0) { 
                     accountServiceUrl = `https://api.sariska.io/api/v1/misc/fetch-project-config`
                 } else {
@@ -327,9 +327,11 @@ class DemuxSink extends Writable {
                     }
                     const data = await response.json();
                     // Assuming meetingFeaturesRecord is defined elsewhere in your code
-                    console.log("data", data);
-                    if (!data?.projectConfig?.analytics) {
-                        return  this._sinkClose(sinkData);
+                    console.log("data?.projectConfig?.analytics", data?.projectConfig?.analytics);
+
+                    if (data?.projectConfig?.analytics === "false" || data?.projectConfig?.analytics === false) {
+                        console.log("close sink started");
+                        this.client.close();
                     }
                 } catch (error) {
                     console.error('Error fetching data:', error.message);
@@ -344,12 +346,10 @@ class DemuxSink extends Writable {
         // Request sent by clients in order to keep the timeout from triggering.
         case 'keepalive':
             this.log.debug('[Demux] Keepalive received for :', statsSessionId);
-
             return;
 
         default:
             this.log.warn('[Demux] Invalid API Request: ', request);
-
             return;
         }
     }

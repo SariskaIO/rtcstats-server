@@ -305,6 +305,7 @@ function wsConnectionHandler(client, upgradeReq) {
         const demuxSinkOptions = {
             clientDetails,
             dumpFolder: tempPath,
+            client,
             log: logger
         };
 
