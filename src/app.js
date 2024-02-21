@@ -261,6 +261,54 @@ function setupMetricsServer() {
     return metricsServer;
 }
 
+
+async function stopSendingMetadataAndEventData(data, client) {
+    console.log("stopSendingMetadataAndEventData", data);
+    try {
+        if (data?.analytics) {
+            if (!data?.token) {
+                console.log("closing connection for no token available in the identity message");
+                client.close(3001);
+                throw new Error("closing connection for no token available in the identity message");
+            } else {
+                let accountServiceUrl;
+                if (data?.analytics?.rtcstatsEndpoint?.indexOf("rtcstats-server.sariska.io")>=0) { 
+                    accountServiceUrl = `https://api.sariska.io/api/v1/misc/fetch-project-config`
+                } else {
+                    accountServiceUrl = `https://api.dev.sariska.io/api/v1/misc/fetch-project-config`
+                }
+    
+                try {
+                    const response = await fetch(accountServiceUrl, {
+                        headers: {
+                            'Authorization': `Bearer ${data?.token}`
+                        }
+                    });
+
+                    if (!response.ok) {
+                        console.log("closing connection in case of no ok response from server");
+                        client.close(3001);
+                        throw new Error("closing connection in case of no ok response from server");
+                    }
+                    
+                    const res = await response.json();    
+                    // Assuming meetingFeaturesRecord is defined elsewhere in your code
+                    if (res?.projectConfig?.analytics === "false" || res?.projectConfig?.analytics === false || !res?.projectConfig?.analytics) {
+                        console.log("closing connection in case of no analytics enabled in console dashboard");
+                        client.close(3001);
+                        throw new Error("closing connection in case something went wrong with the API");
+                    }
+                } catch (error) {
+                    console.log("closing connection in case something went wrong with the API's", error);
+                    client.close(3001);
+                    throw new Error("closing connection in case something went wrong with the API");
+                }
+            }
+        }
+    } catch (error) {
+        throw new Error("Couldn't connect to::::", error);
+    }    
+}
 /**
  * Main handler for web socket connections.
  * Messages are sent through a node stream which saves them to a dump file.
@@ -333,6 +381,12 @@ function wsConnectionHandler(client, upgradeReq) {
             } = meta;
 
             const tenantInfo = extractTenantDataFromUrl(conferenceUrl);
+            try {
+                await stopSendingMetadataAndEventData(meta, client);
+            } catch (err) {
+                client.close(3001);
+                return;
+            }
 
             // customerId provided directly as metadata overwrites the id extracted from the url.
             // jitsi-meet extracts this id using a dedicated endpoint in certain cases.
@@ -420,55 +474,12 @@ function wsConnectionHandler(client, upgradeReq) {
             // Handle incoming WebSocket messages here        
             // You can parse the message if it's JSON
             // For example, if you expect JSON data:
-            try {
-                const data = JSON.parse(message);
-                if (data?.type === 'identity') {
-                    console.log("data?.data[2]?.token", data?.data[2]?.token)
-                    if (!data?.data[2]?.token) {
-                        console.log("closing connection for no token available in the identity message");
-                        client.close(3001);
-                        return;
-                    } else {
-                        let accountServiceUrl;
-                        if (data?.data[2]?.analytics?.rtcstatsEndpoint?.indexOf("rtcstats-server.sariska.io")>=0) { 
-                            accountServiceUrl = `https://api.sariska.io/api/v1/misc/fetch-project-config`
-                        } else {
-                            accountServiceUrl = `https://api.dev.sariska.io/api/v1/misc/fetch-project-config`
-                        }
-
-                        try {
-                            console.log("accountServiceUrl", accountServiceUrl);
-                            const response = await fetch(accountServiceUrl, {
-                                headers: {
-                                    'Authorization': `Bearer ${data?.data[2]?.token}`
-                                }
-                            });
-
-                            if (!response.ok) {
-                                console.log("closing connection in case of no ok response from server");
-                                client.close(3001);
-                                return;
-                            }
-                            
-                            const res = await response.json();
-                            console.log("resresresresresresresresresres", res);
-
-                            // Assuming meetingFeaturesRecord is defined elsewhere in your code
-                            console.log("data?.projectConfig?.analytics", res?.projectConfig?.analytics);
-                            if (res?.projectConfig?.analytics === "false" || res?.projectConfig?.analytics === false || !res?.projectConfig?.analytics) {
-                                console.log("closing connection in case of no analytics enabled in console dashboard");
-                                client.close(3001);
-                                return;
-                            }
-                        } catch (error) {
-                            console.log("closing connection in case something went wrong with the API's", error);
-                            client.close(3001);
-                            return;
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Error parsing JSON message:', error);
+            const data = JSON.parse(message);
+            if (data?.data && data?.data[2] && data?.data[2]?.analytics) {
+                await stopSendingMetadataAndEventData(data?.data[2], client);
+            } else {
+                client.close(3001);
+                return;
             }
         });
 
