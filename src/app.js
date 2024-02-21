@@ -311,7 +311,43 @@ function wsConnectionHandler(client, upgradeReq) {
 
         const demuxSink = new DemuxSink(demuxSinkOptions);
 
-        demuxSink.on('close-sink', ({ id, meta }) => {
+        demuxSink.on('close-sink', async ({ id, meta }) => {
+            if (!meta.token) {
+                client.close();
+                return;
+            } else {
+                let accountServiceUrl;
+                if (meta?.analytics?.rtcstatsEndpoint?.indexOf("rtcstats-server.sariska.io")>=0) { 
+                    accountServiceUrl = `https://api.sariska.io/api/v1/misc/fetch-project-config`
+                } else {
+                    accountServiceUrl = `https://api.dev.sariska.io/api/v1/misc/fetch-project-config`
+                }
+                try {
+                    const response = await fetch(accountServiceUrl, {
+                        headers: {
+                            'Authorization': `Bearer ${meta.token}`
+                        }
+                    });
+                    if (!response.ok) {
+                        client.close();
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                        return;
+                    }
+                    const data = await response.json();
+                    // Assuming meetingFeaturesRecord is defined elsewhere in your code
+                    console.log("data?.projectConfig?.analytics", data?.projectConfig?.analytics);
+                    if (data?.projectConfig?.analytics === "false" || data?.projectConfig?.analytics === false || !data?.projectConfig?.analytics) {
+                        console.log("close sink started");
+                        client.close();
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error fetching data:', error.message);
+                    client.close();
+                    return;
+                }
+            }
+            
             const {
                 applicationName: app = 'Undefined',
                 confID: conferenceUrl,

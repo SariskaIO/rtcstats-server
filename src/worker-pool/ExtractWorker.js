@@ -16,7 +16,6 @@ parentPort.on('message', request => {
     switch (request.type) {
     case RequestType.PROCESS: {
         const { body: { clientId = '' } = {} } = request;
-
         logger.info('[Extract] Worker is processing statsSessionId: %s', clientId);
         processRequest(request);
         break;

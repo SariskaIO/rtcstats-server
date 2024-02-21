@@ -47,6 +47,8 @@ class FirehoseConnector {
      * @param {*} stream
      */
     _putRecord(schemaObj, stream) {
+
+        
         this._firehose.putRecord(
             {
                 DeliveryStreamName: stream /* required */,

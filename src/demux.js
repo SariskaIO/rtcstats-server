@@ -306,37 +306,6 @@ class DemuxSink extends Writable {
         // either on an explicit close or when the timeout mechanism triggers.
         case 'identity':
             // Assuming user is an object containing the data you want to include in the token
-            if (data && data[2]) {
-                const identityData  = data[2];
-                let accountServiceUrl;
-                console.log("identityData", identityData);
-                
-                if (identityData?.analytics?.rtcstatsEndpoint?.indexOf("rtcstats-server.sariska.io")>=0) { 
-                    accountServiceUrl = `https://api.sariska.io/api/v1/misc/fetch-project-config`
-                } else {
-                    accountServiceUrl = `https://api.dev.sariska.io/api/v1/misc/fetch-project-config`
-                }
-                try {
-                    const response = await fetch(accountServiceUrl, {
-                        headers: {
-                            'Authorization': `Bearer ${identityData.token}`
-                        }
-                    });
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    const data = await response.json();
-                    // Assuming meetingFeaturesRecord is defined elsewhere in your code
-                    console.log("data?.projectConfig?.analytics", data?.projectConfig?.analytics);
-
-                    if (data?.projectConfig?.analytics === "false" || data?.projectConfig?.analytics === false) {
-                        console.log("close sink started");
-                        this.client.close();
-                    }
-                } catch (error) {
-                    console.error('Error fetching data:', error.message);
-                }
-            }
             return this._sinkUpdateMetadata(sinkData, data);
 
         // Generic request with stats data, simply write it to the sink.
