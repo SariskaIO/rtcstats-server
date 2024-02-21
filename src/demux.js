@@ -7,7 +7,6 @@ const jwt = require('jsonwebtoken');
 
 const PromCollector = require('./metrics/PromCollector.js');
 const { uuidV4 } = require('./utils/utils.js');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 
 const cwd = process.cwd();

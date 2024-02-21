@@ -7,7 +7,7 @@ const https = require('https');
 const path = require('path');
 const { pipeline } = require('stream');
 const WebSocket = require('ws');
-
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const { name: appName, version: appVersion } = require('../package');
 
 const AmplitudeConnector = require('./database/AmplitudeConnector');
@@ -311,43 +311,7 @@ function wsConnectionHandler(client, upgradeReq) {
 
         const demuxSink = new DemuxSink(demuxSinkOptions);
 
-        demuxSink.on('close-sink', async ({ id, meta }) => {
-            if (!meta.token) {
-                client.close();
-                return;
-            } else {
-                let accountServiceUrl;
-                if (meta?.analytics?.rtcstatsEndpoint?.indexOf("rtcstats-server.sariska.io")>=0) { 
-                    accountServiceUrl = `https://api.sariska.io/api/v1/misc/fetch-project-config`
-                } else {
-                    accountServiceUrl = `https://api.dev.sariska.io/api/v1/misc/fetch-project-config`
-                }
-                try {
-                    const response = await fetch(accountServiceUrl, {
-                        headers: {
-                            'Authorization': `Bearer ${meta.token}`
-                        }
-                    });
-                    if (!response.ok) {
-                        client.close();
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                        return;
-                    }
-                    const data = await response.json();
-                    // Assuming meetingFeaturesRecord is defined elsewhere in your code
-                    console.log("data?.projectConfig?.analytics", data?.projectConfig?.analytics);
-                    if (data?.projectConfig?.analytics === "false" || data?.projectConfig?.analytics === false || !data?.projectConfig?.analytics) {
-                        console.log("close sink started");
-                        client.close();
-                        return;
-                    }
-                } catch (error) {
-                    console.error('Error fetching data:', error.message);
-                    client.close();
-                    return;
-                }
-            }
-            
+        demuxSink.on('close-sink', async ({ id, meta }) => {            
             const {
                 applicationName: app = 'Undefined',
                 confID: conferenceUrl,
@@ -451,6 +415,62 @@ function wsConnectionHandler(client, upgradeReq) {
                 state: 'initial'
             }
         }));
+
+        client.on('message', async message => {
+            // Handle incoming WebSocket messages here        
+            // You can parse the message if it's JSON
+            // For example, if you expect JSON data:
+            try {
+                const data = JSON.parse(message);
+                if (data?.type === 'identity') {
+                    console.log("data?.data[2]?.token", data?.data[2]?.token)
+                    if (!data?.data[2]?.token) {
+                        console.log("closing connection for no token available in the identity message");
+                        client.close(3001);
+                        return;
+                    } else {
+                        let accountServiceUrl;
+                        if (data?.data[2]?.analytics?.rtcstatsEndpoint?.indexOf("rtcstats-server.sariska.io")>=0) { 
+                            accountServiceUrl = `https://api.sariska.io/api/v1/misc/fetch-project-config`
+                        } else {
+                            accountServiceUrl = `https://api.dev.sariska.io/api/v1/misc/fetch-project-config`
+                        }
+
+                        try {
+                            console.log("accountServiceUrl", accountServiceUrl);
+                            const response = await fetch(accountServiceUrl, {
+                                headers: {
+                                    'Authorization': `Bearer ${data?.data[2]?.token}`
+                                }
+                            });
+
+                            if (!response.ok) {
+                                console.log("closing connection in case of no ok response from server");
+                                client.close(3001);
+                                return;
+                            }
+                            
+                            const res = await response.json();
+                            console.log("resresresresresresresresresres", res);
+
+                            // Assuming meetingFeaturesRecord is defined elsewhere in your code
+                            console.log("data?.projectConfig?.analytics", res?.projectConfig?.analytics);
+                            if (res?.projectConfig?.analytics === "false" || res?.projectConfig?.analytics === false || !res?.projectConfig?.analytics) {
+                                console.log("closing connection in case of no analytics enabled in console dashboard");
+                                client.close(3001);
+                                return;
+                            }
+                        } catch (error) {
+                            console.log("closing connection in case something went wrong with the API's", error);
+                            client.close(3001);
+                            return;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error parsing JSON message:', error);
+            }
+        });
 
         client.on('error', e => {
             logger.error('[App] Websocket error: %s', e);
