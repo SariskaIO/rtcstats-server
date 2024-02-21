@@ -263,7 +263,6 @@ function setupMetricsServer() {
 
 
 async function stopSendingMetadataAndEventData(data, client) {
-    console.log("stopSendingMetadataAndEventData", data);
     try {
         if (data?.analytics) {
             if (!data?.token) {

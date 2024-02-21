@@ -116,7 +116,6 @@ class DemuxSink extends Writable {
      */
     _sinkClose({ id, sink }) {
         this.log.info('[Demux] close-sink %s', id);
-        console.log("_sinkClose");
         sink.end();
     }
 
