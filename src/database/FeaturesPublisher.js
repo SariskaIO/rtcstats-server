@@ -509,7 +509,7 @@ class FeaturesPublisher {
         }
 
         Object.keys(e2epings).forEach(ping => {
-            this._dbConnector.putE2EFeaturesRecord({...e2epings[ping], statsSessionId, appId, ownerId, remoteEndpointId: ping});
+            this._dbConnector.putE2EFeaturesRecord({...e2epings[ping], statsSessionId, appId, ownerId, createdate:createDate, remoteEndpointId: ping});
         });
     }
 

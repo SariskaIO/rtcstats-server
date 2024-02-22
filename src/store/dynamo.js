@@ -71,6 +71,8 @@ async function saveEntry(data) {
             endDate
         };
 
+        console.log("entryentryentryentry", entry);
+        
         const document = new Document(entry);
 
         // overwrite: false will returns an exception in case the entry already exists
