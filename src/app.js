@@ -380,12 +380,12 @@ function wsConnectionHandler(client, upgradeReq) {
             } = meta;
 
             const tenantInfo = extractTenantDataFromUrl(conferenceUrl);
-            try {
-                await stopSendingMetadataAndEventData(meta, client);
-            } catch (err) {
-                client.close(3001);
-                return;
-            }
+            // try {
+            //     await stopSendingMetadataAndEventData(meta, client);
+            // } catch (err) {
+            //     client.close(3001);
+            //     return;
+            // }
 
             // customerId provided directly as metadata overwrites the id extracted from the url.
             // jitsi-meet extracts this id using a dedicated endpoint in certain cases.
@@ -473,13 +473,13 @@ function wsConnectionHandler(client, upgradeReq) {
             // Handle incoming WebSocket messages here        
             // You can parse the message if it's JSON
             // For example, if you expect JSON data:
-            const data = JSON.parse(message);
-            if (data?.data && data?.data[2] && data?.data[2]?.analytics) {
-                await stopSendingMetadataAndEventData(data?.data[2], client);
-            } else {
-                client.close(3001);
-                return;
-            }
+            // const data = JSON.parse(message);
+            // if (data?.data && data?.data[2] && data?.data[2]?.analytics) {
+            //     await stopSendingMetadataAndEventData(data?.data[2], client);
+            // } else {
+            //     client.close(3001);
+            //     return;
+            // }
         });
 
         client.on('error', e => {
