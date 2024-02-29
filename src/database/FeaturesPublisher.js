@@ -366,6 +366,7 @@ class FeaturesPublisher {
             browserInfo: {
                 name: browserName,
                 version: browserVersion,
+                userAgent,
                 os
             } = {},
             deploymentInfo: {
@@ -402,6 +403,7 @@ class FeaturesPublisher {
         const meetingFeaturesRecord = {
             appId,
             ownerId,
+            userAgent,
             appEnv: this._appEnv,
             createDate,
             statsSessionId,

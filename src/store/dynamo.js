@@ -107,7 +107,6 @@ async function saveEntryAssureUnique({ ...data }) {
     if (!config.dynamo.tableName) {
         return;
     }
-
     const { clientId } = data;
     const [ baseClientId, order ] = clientId.split('_');
 
