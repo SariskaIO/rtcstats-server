@@ -10,7 +10,7 @@ class StatsAggregator {
      * @param {Object} track - extracted track features.
      * @param {Object} param1 - additional track related metadata.
      */
-    calculateFreeze(packets, packetsLost, freezeThreshold = 5) {
+    calculateFreeze(packets, packetsLost, freezeThreshold = 5, totalTrackDuration) {
         /**
          * Calculates the audio freeze rate, handles freezes, logs stats, and returns freeze percentage and duration.
          *
@@ -53,7 +53,7 @@ class StatsAggregator {
             return { freezePercentage: 0, freezeDuration: 0 };
         }
     
-        const totalFreezePercentage = (totalPacketsLost / totalPacketsReceived) * 100;    
+        const totalFreezePercentage = (freezeDuration / totalTrackDuration);    
         return { freezePercentage: totalFreezePercentage, freezeDuration: totalFreezeDuration };
     }
 
@@ -169,7 +169,7 @@ class StatsAggregator {
         };
 
         const { packets, packetsLost, samplesReceived, concealedSamples, startTime, endTime } = trackStats;
-        const { freezeDuration, freezePercentage } = this.calculateFreeze(packets, packetsLost);
+        const { freezeDuration, freezePercentage } = this.calculateFreeze(packets, packetsLost, endTime-startTime);
         stats.freezeDuration = freezeDuration;
         stats.freezePercentage = freezePercentage;
 
