@@ -31,7 +31,12 @@ class StatsAggregator {
         let totalPacketsLost = 0;
     
         for (let i = 1; i < packets.length; i++) {
-            const currentPacketsReceived = packets[i] - packets[i - 1]; // Calculate current packets received
+            let currentPacketsReceived;
+            if ( i === 0) {
+                currentPacketsReceived = packets[i]; // Calculate current packets received
+            } else  {
+                currentPacketsReceived = packets[i] - packets[i - 1]; // Calculate current packets received
+            }
             const currentPacketsLost = packetsLost[i]; // Use packetsLost directly
     
             const freezeRate = (currentPacketsLost / currentPacketsReceived) * 100;
